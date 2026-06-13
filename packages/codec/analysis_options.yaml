@@ -1,0 +1,15 @@
+include: package:lints/recommended.yaml
+
+analyzer:
+  language:
+    strict-casts: true
+    strict-inference: true
+    strict-raw-types: true
+
+linter:
+  rules:
+    # 包内不允许相对 lib 之外的 import（防止意外反向依赖主项目）
+    avoid_relative_lib_imports: true
+    # public_member_api_docs 暂不启用：sealed 子类的细枝末节字段被强制文档
+    # 噪音过大；关键 public API（Codec / DecodeError / DecodeContext）已有
+    # 详细 dartdoc，靠 review 维持。

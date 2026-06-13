@@ -1,0 +1,30 @@
+name: codec_gen
+description: "codec 包配套的 code generator:读取 @Codable / @CodecEnum 注解,经 build_runner 生成类型安全、带 path 错误定位的 _$xxxCodec 编解码静态字段。"
+version: 0.2.0
+repository: https://github.com/Vincen-dev/codec
+issue_tracker: https://github.com/Vincen-dev/codec/issues
+
+topics:
+  - json
+  - codec
+  - code-generation
+  - build-runner
+  - serialization
+
+environment:
+  sdk: ^3.6.0
+
+resolution: workspace
+
+dependencies:
+  analyzer: ^13.3.0
+  build: ^4.0.6
+  source_gen: ^4.2.3
+  dart_style: ^3.0.0
+  codec: ^0.2.0
+
+dev_dependencies:
+  build_runner: ^2.4.0
+  build_test: ^3.5.15
+  test: ^1.25.0
+  lints: ^6.1.0

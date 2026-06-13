@@ -1,0 +1,21 @@
+name: Publish codec_gen to pub.dev
+
+# Triggered only by tags of the form codec_gen-vX.Y.Z (numeric semver glob).
+# This pattern must match the "Tag pattern" configured on
+# pub.dev/packages/codec_gen/admin -> Automated publishing (codec_gen-v{{version}}).
+#
+# codec_gen depends on the hosted `codec` package, so codec must already be
+# published at a matching version before cutting a codec_gen release.
+on:
+  push:
+    tags:
+      - 'codec_gen-v[0-9]+.[0-9]+.[0-9]+'
+
+jobs:
+  publish:
+    permissions:
+      id-token: write  # Required for OIDC authentication to pub.dev
+      contents: read
+    uses: dart-lang/setup-dart/.github/workflows/publish.yml@65eb853c7ba17dde3be364c3d2858773e7144260  # v1
+    with:
+      working-directory: packages/codec_gen

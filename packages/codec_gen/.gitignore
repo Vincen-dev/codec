@@ -1,0 +1,5 @@
+.dart_tool/
+# workspace 模式下子包没有自己的 pubspec.lock，保留作为安全网
+pubspec.lock
+# Flutter 在子包跑 `flutter test` 会产出 build/，不入仓
+build/

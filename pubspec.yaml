@@ -1,0 +1,12 @@
+# pub workspace 根（不发布）。
+# 统一解析 packages/codec、packages/codec_gen，本地开发时 codec_gen 直接解析
+# 到 workspace 内的本地 codec（版本满足约束），无需 path 依赖或 override。
+name: codec_workspace
+publish_to: none
+
+environment:
+  sdk: ^3.6.0
+
+workspace:
+  - packages/codec
+  - packages/codec_gen

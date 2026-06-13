@@ -1,0 +1,9 @@
+# Dart 工具产物
+.dart_tool/
+
+# library 包不提交 lock：版本由主项目 application 锁定
+# 注：workspace 模式下子包没有自己的 pubspec.lock，这行作为安全网保留
+pubspec.lock
+
+# Flutter 在子包跑 `flutter test` 会产出 build/，不入仓
+build/

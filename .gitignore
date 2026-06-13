@@ -1,0 +1,20 @@
+# Dart 工具产物
+.dart_tool/
+build/
+doc/api/
+
+# library monorepo 不提交 lock：版本交由消费者解析。
+# pub workspace 模式下只有根目录会生成 pubspec.lock，一并忽略。
+pubspec.lock
+
+# IDE / OS
+.DS_Store
+.idea/
+*.iml
+.vscode/
+
+# Claude Code 本地个人设置（含本机路径/权限，不入库）
+.claude/settings.local.json
+
+# 设计 spec（流程产物，本地保留不入库）
+docs/superpowers/
