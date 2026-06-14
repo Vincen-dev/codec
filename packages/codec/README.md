@@ -560,6 +560,35 @@ commentCodec = Codec.object((b) => ...
 
 ---
 
+## API stability
+
+`codec` follows semantic versioning, with one nuance that affects how you should
+consume the error model.
+
+`DecodeErrorKind`, `DecodeOutcome`, and `CodecException` (and their subclasses)
+are **`sealed`**. New variants may be added in **minor** releases — for example
+`UnexpectedError` (a `DecodeErrorKind`) was introduced in 0.2.0.
+
+A `sealed` type lets the compiler enforce exhaustive `switch`es, which is great
+*inside* this library. But it also means an exhaustive `switch` in *your* code
+stops compiling when a new variant is added. To stay forward-compatible across
+minor upgrades, **include a `default:` (or wildcard `_`) branch** when you switch
+over these types:
+
+```dart
+final advice = switch (error.kind) {
+  MissingField() => 'add the field',
+  WrongType() => 'fix the type',
+  _ => 'other decode error', // survives new DecodeErrorKind variants
+};
+```
+
+Adding a new error kind, outcome, or exception subclass is treated as a **minor**
+change. Breaking changes to existing variants' fields or to the public `Codec`
+API follow normal semver (pre-1.0: bump the minor).
+
+---
+
 ## FAQ
 
 **Q: Why not just use freezed + json_serializable?**
