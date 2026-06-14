@@ -10,12 +10,19 @@ import 'runtime_api.dart';
 
 /// 处理 `@Codable` 类。生成顶层 `_$xxxCodec` final 字段。
 class CodableGenerator extends GeneratorForAnnotation<Codable> {
-  CodableGenerator({this.formatExceptions = false});
+  CodableGenerator({
+    this.formatExceptions = false,
+    this.defaultFieldRename = FieldRename.none,
+  });
 
   /// `true` 时在顶层 codec 表达式末尾追加 `.withFormatExceptions()`，
   /// 使其 decode/encode 抛出 [FormatException] 而非 [CodecException]。
   /// 对应 build.yaml 的 `exception_style: format`。
   final bool formatExceptions;
+
+  /// 项目级默认字段重命名策略（来自 build.yaml `field_rename`）。
+  /// `@Codable(fieldRename:)` 未显式给值（注解里为 null）时回落到它。
+  final FieldRename defaultFieldRename;
 
   /// 仅包装顶层 codec 表达式；helper 声明（enumValueField）不受影响。
   String _applyStyle(String codecExpr) =>
@@ -204,10 +211,12 @@ class CodableGenerator extends GeneratorForAnnotation<Codable> {
   _CodableConfig _readCodableAnnotation(ConstantReader r) {
     return _CodableConfig(
       includeIfNull: r.read('includeIfNull').boolValue,
+      // 注解未写 fieldRename（可空，默认 null）→ ConstantReader.isNull → 回落到
+      // 项目级默认；显式写了任何值（含 none）→ 正常解析、覆盖默认。
       fieldRename: _readEnumValue(
         r.read('fieldRename'),
         FieldRename.values,
-        FieldRename.none,
+        defaultFieldRename,
       ),
     );
   }

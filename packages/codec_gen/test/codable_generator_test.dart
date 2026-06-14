@@ -12,6 +12,7 @@
 
 import 'package:build/build.dart';
 import 'package:build_test/build_test.dart';
+import 'package:codec/codec.dart';
 import 'package:codec_gen/src/codable_generator.dart';
 import 'package:source_gen/source_gen.dart';
 import 'package:test/test.dart';
@@ -603,6 +604,73 @@ final class M {
           .split('\n')
           .firstWhere((l) => l.contains('_\$mOrderStateEnumCodec'));
       expect(helperLine, isNot(contains('.withFormatExceptions()')));
+    });
+  });
+
+  group('CodableGenerator — 全局 field_rename', () {
+    test('全局 snake：@Codable() 无 fieldRename → key 变 snake', () async {
+      final out = await _generateWith('''
+import 'package:codec/codec.dart';
+@Codable()
+final class M {
+  final String userName;
+  const M({required this.userName});
+}
+''', CodableGenerator(defaultFieldRename: FieldRename.snake));
+      expect(out, contains("b.required<String>('user_name', Codec.string)"));
+      expect(out, contains("'user_name': Codec.string.encode(v.userName)"));
+    });
+
+    test('类级 fieldRename 覆盖全局：全局 snake + 类级 kebab → kebab', () async {
+      final out = await _generateWith('''
+import 'package:codec/codec.dart';
+@Codable(fieldRename: FieldRename.kebab)
+final class M {
+  final String userName;
+  const M({required this.userName});
+}
+''', CodableGenerator(defaultFieldRename: FieldRename.snake));
+      expect(out, contains("'user-name'"));
+      expect(out, isNot(contains("'user_name'")));
+    });
+
+    test('显式 none 覆盖全局：全局 snake + 类级 none → 不改名', () async {
+      final out = await _generateWith('''
+import 'package:codec/codec.dart';
+@Codable(fieldRename: FieldRename.none)
+final class M {
+  final String userName;
+  const M({required this.userName});
+}
+''', CodableGenerator(defaultFieldRename: FieldRename.snake));
+      expect(out, contains("'userName'"));
+      expect(out, isNot(contains("'user_name'")));
+    });
+
+    test('字段级 name 仍最高：全局 snake + @CodecField(name:) → 用显式名', () async {
+      final out = await _generateWith('''
+import 'package:codec/codec.dart';
+@Codable()
+final class M {
+  @CodecField(name: 'EXPLICIT')
+  final String userName;
+  const M({required this.userName});
+}
+''', CodableGenerator(defaultFieldRename: FieldRename.snake));
+      expect(out, contains("'EXPLICIT'"));
+      expect(out, isNot(contains("'user_name'")));
+    });
+
+    test('无全局（默认）回归：@Codable() → 不改名', () async {
+      final out = await _generate('''
+import 'package:codec/codec.dart';
+@Codable()
+final class M {
+  final String userName;
+  const M({required this.userName});
+}
+''');
+      expect(out, contains("'userName'"));
     });
   });
 }
