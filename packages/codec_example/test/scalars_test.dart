@@ -1,3 +1,4 @@
+import 'package:codec/codec.dart';
 import 'package:codec_example/scalars.dart';
 import 'package:test/test.dart';
 
@@ -80,5 +81,13 @@ void main() {
     expect(m.loginCount, 0); // defaultValue
     // name 省略（nullable + includeIfNull:false）；cached_token 从不写
     expect(m.toJson(), {'account_id': 'a2', 'login_count': 0});
+  });
+
+  test('Account — 缺失 required 字段抛 DecodeException', () {
+    // 安全网：若生成器把 required 弱化成 optional，此用例不再抛、即变红。
+    expect(
+      () => Account.fromJson(<String, Object?>{'login_count': 0}),
+      throwsA(isA<DecodeException>()),
+    );
   });
 }
