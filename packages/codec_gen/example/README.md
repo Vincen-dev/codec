@@ -1,20 +1,21 @@
-# codec_gen 示例
+# codec_gen example
 
-`codec_gen` 是 `build_runner` 驱动的代码生成器，没有独立可运行的 `main`——
-它在你的项目里读注解、生成 `*.g.dart`。以下是最小用法。
+`codec_gen` is a `build_runner`-driven code generator; it has no standalone
+`main` to run. Instead, it reads annotations in your project and generates
+`*.g.dart` files. The following shows the minimal usage.
 
-## 1. 依赖
+## 1. Dependencies
 
 ```yaml
 dependencies:
-  codec: ^0.2.0
+  codec: ^0.2.1
 
 dev_dependencies:
   codec_gen: ^0.2.0
   build_runner: ^2.4.0
 ```
 
-## 2. 给 model 挂注解
+## 2. Annotate a model
 
 ```dart
 import 'package:codec/codec.dart';
@@ -37,18 +38,22 @@ final class User {
 }
 ```
 
-## 3. 生成
+## 3. Run the generator
 
 ```bash
 dart run build_runner build --delete-conflicting-outputs
 ```
 
-`build_runner` 会生成 `user.g.dart`，内含 `_$userCodec`。之后
-`User.fromJson(...)` / `user.toJson()` 即可用，失败默认抛带 `$.path` 的
-`DecodeException`（`on DecodeException` 捕获）。需要 `FormatException` 兼容时，
-在 `build.yaml` 中设 `exception_style: format`（生成 codec 自动追加
-`.withFormatExceptions()`），或在手写调用点对最外层 codec 追加
-`.withFormatExceptions()`。
+`build_runner` generates `user.g.dart` containing `_$userCodec`. After that,
+`User.fromJson(...)` / `user.toJson()` are ready to use. On failure, the codec
+throws a `DecodeException` with a `$.path` error location (catch with
+`on DecodeException`).
 
-完整注解语义（字段重命名、枚举映射、DateTime 模式、默认值等）见
-[`codec_gen` README](../README.md)。
+For `FormatException` compatibility, either set `exception_style: format` in
+`build.yaml` (the generator appends `.withFormatExceptions()` to every
+top-level codec automatically), or call `.withFormatExceptions()` manually on
+the outermost codec at the call site.
+
+For the full annotation reference (field renaming, enum mapping, DateTime
+modes, default values, etc.) see the
+[`codec_gen` README](../README.md).

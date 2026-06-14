@@ -1,7 +1,7 @@
 name: codec_gen
-description: "codec 包配套的 code generator:读取 @Codable / @CodecEnum 注解,经 build_runner 生成类型安全、带 path 错误定位的 _$xxxCodec 编解码静态字段。"
+description: "Code generator for the codec package: reads @Codable / @CodecEnum annotations and generates type-safe JSON codec fields with $.path error locations, via build_runner."
 version: 0.2.0
-repository: https://github.com/Vincen-dev/codec
+repository: https://github.com/Vincen-dev/codec/tree/main/packages/codec_gen
 issue_tracker: https://github.com/Vincen-dev/codec/issues
 
 topics:

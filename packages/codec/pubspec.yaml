@@ -1,7 +1,7 @@
 name: codec
-description: "类型安全、可组合的 JSON 编解码库:失败抛结构化 CodecException 携带 $.path 路径定位(可选兼容 FormatException),支持嵌套对象、discriminated union、递归结构与多版本兼容。"
-version: 0.2.0
-repository: https://github.com/Vincen-dev/codec
+description: "Type-safe, composable JSON codecs for Dart: structured CodecException with $.path on failure. Nested objects, discriminated unions, recursion, multi-version compatibility."
+version: 0.2.1
+repository: https://github.com/Vincen-dev/codec/tree/main/packages/codec
 issue_tracker: https://github.com/Vincen-dev/codec/issues
 
 topics:

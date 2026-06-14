@@ -1,21 +1,34 @@
 # codec & codec_gen
 
-类型安全、可组合的 JSON 编解码工具链，分为两个独立发布的 pub 包：
+[![codec](https://img.shields.io/pub/v/codec.svg?label=codec)](https://pub.dev/packages/codec)
+[![codec_gen](https://img.shields.io/pub/v/codec_gen.svg?label=codec_gen)](https://pub.dev/packages/codec_gen)
+[![license: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 
-| 包 | 角色 | 依赖类型 |
+**Type-safe, composable JSON encode/decode toolchain for Dart — path-precise errors, zero runtime dependencies.**
+
+| Package | Role | Dependency type |
 |---|---|---|
-| [`codec`](packages/codec) | 运行时：手写 / 组合 codec，零第三方依赖 | `dependencies` |
-| [`codec_gen`](packages/codec_gen) | 代码生成：`@Codable` / `@CodecEnum` 注解 → 生成 codec 字段 | `dev_dependencies` |
+| [`codec`](packages/codec) | Runtime: hand-written / composable codecs, zero third-party dependencies | `dependencies` |
+| [`codec_gen`](packages/codec_gen) | Code generator: `@Codable` / `@CodecEnum` annotations → generated codec fields | `dev_dependencies` |
 
-## 安装
+## Contents
 
-只用运行时（手写 codec）：
+- [Installation](#installation)
+- [What is this](#what-is-this)
+- [Development](#development-monorepo)
+- [Publishing](#publishing)
+
+---
+
+## Installation
+
+Runtime only (hand-written codecs):
 
 ```bash
 dart pub add codec
 ```
 
-加上注解驱动的代码生成：
+With annotation-driven code generation:
 
 ```bash
 dart pub add codec
@@ -23,9 +36,11 @@ dart pub add dev:codec_gen dev:build_runner
 dart run build_runner build --delete-conflicting-outputs
 ```
 
-## 这是什么
+---
 
-`codec` 把 JSON 编解码表达为可组合的一等对象 `Codec<T>`：
+## What is this
+
+`codec` models JSON encoding and decoding as composable, first-class `Codec<T>` objects:
 
 ```dart
 import 'package:codec/codec.dart';
@@ -39,83 +54,82 @@ final userCodec = Codec.object<User>(
 );
 ```
 
-解码失败默认抛结构化 `DecodeException`（`CodecException` 的 sealed 子类），message 携带精确路径：
+A decode failure throws a structured `DecodeException` (a sealed subclass of `CodecException`); the message carries the exact field path:
 
 ```
 decode User failed (1 error):
   - $.age: expected int, got: "x" (String)
 ```
 
-既有 `on FormatException` 代码可通过 `.withFormatExceptions()`（手写 codec）或
-`build.yaml` 设 `exception_style: format`（codegen）零侵入兼容。
+Code that already catches `FormatException` can migrate with zero invasiveness: append `.withFormatExceptions()` on any hand-written codec, or set `exception_style: format` in `build.yaml` for generated codecs.
 
-详见各包 README：[codec](packages/codec/README.md) · [codec_gen](packages/codec_gen/README.md)。
+See each package's README for full details: [codec](packages/codec/README.md) · [codec_gen](packages/codec_gen/README.md).
 
-## 开发（monorepo）
+---
 
-本仓库是 pub workspace，两个包共用一次依赖解析：
+## Development (monorepo)
+
+This repository is a pub workspace; both packages share a single dependency resolution:
 
 ```bash
-# 仓库根:刷新所有 workspace 成员的依赖
+# At the repo root — refresh dependencies for all workspace members
 dart pub get
 
-# 分析 / 测试(进对应包目录)
+# Analyze / test (run from the respective package directory)
 cd packages/codec     && dart analyze && dart test
 cd packages/codec_gen && dart analyze && dart test
 ```
 
-`codec_gen` 通过 `codec: ^0.2.0` 依赖 `codec`；workspace 模式下本地开发直接
-解析到本仓内的 `packages/codec`，无需 path 依赖或 override。
+`codec_gen` depends on `codec: ^0.2.0`. In workspace mode, local development resolves directly to `packages/codec` inside this repo — no `path` dependency or `dependency_override` needed.
 
-## 发布
+---
 
-两个包**独立发布**，且 **`codec` 必须先发**——`codec_gen` 依赖其 hosted 版本，
-codec 不在 pub.dev 上时 `codec_gen` 解析不到、发布会失败。
+## Publishing
 
-> 发布目标默认是 pub.dev。若本机 `PUB_HOSTED_URL` 指向了国内镜像（只读），
-> 发布前需覆盖回官方源（如 `PUB_HOSTED_URL=https://pub.dev`，或临时清空该变量）。
+The two packages are **published independently**, and **`codec` must be published first** — `codec_gen` depends on a hosted version of `codec`, so if `codec` is not yet on pub.dev, `codec_gen` cannot resolve its dependency and publishing will fail.
 
-### 首次发布（手动，每个包一次）
+> The default publish target is pub.dev. If your machine's `PUB_HOSTED_URL` points to a read-only mirror, override it back to the official registry before publishing (e.g. `PUB_HOSTED_URL=https://pub.dev`, or unset the variable temporarily).
 
-pub.dev 的自动发布只能用于**已存在**的包，新包的第一个版本必须手动发：
+### First publish (manual — once per package)
+
+pub.dev's automated publishing only works for packages that **already exist** on pub.dev. The very first version of each package must be published manually:
 
 ```bash
-# 先 codec：dry-run 校验后发布，等它在 pub.dev 上线
+# codec first: dry-run to validate, then publish; wait for it to appear on pub.dev
 cd packages/codec     && dart pub publish --dry-run && dart pub publish
-# 再 codec_gen（此时它的 codec:^x 才能在线解析）
+# codec_gen second (its codec:^x constraint can now resolve online)
 cd packages/codec_gen && dart pub publish --dry-run && dart pub publish
 ```
 
-### 开启自动发布（GitHub Actions + OIDC，每个包配置一次）
+`codec 0.2.1` and `codec_gen 0.2.0` are the first versions published to pub.dev. The 0.1.x line was never released publicly.
 
-仓库已内置 `.github/workflows/publish-codec.yml` 与 `publish-codec_gen.yml`
-（调用官方 `dart-lang/setup-dart` reusable workflow，凭 OIDC 鉴权、无需长期令牌）。
-首发后，在 pub.dev 上给每个包各授权一次即可：
+### Enable automated publishing (GitHub Actions + OIDC — once per package)
 
-1. 登录 pub.dev，打开 `https://pub.dev/packages/<包名>/admin`
-2. 进入 **Automated publishing** → **Enable publishing from GitHub Actions**
-3. **Repository** 填 `Vincen-dev/codec`（两个包都填这同一个仓库）
-4. **Tag pattern**（`{{version}}` 为字面占位符，须与工作流 `on.push.tags` 的 glob 对应）：
-   - `codec` 包填 `codec-v{{version}}`
-   - `codec_gen` 包填 `codec_gen-v{{version}}`
-5. （可选，更严）勾 **Require GitHub Actions environment** 并命名（如 `pub.dev`），
-   再在 GitHub 仓库 Settings → Environments 建同名环境（可加审批人），
-   并在对应工作流的 `with:` 下加一行 `environment: pub.dev`
-6. 保存
+The repo ships with `.github/workflows/publish-codec.yml` and `publish-codec_gen.yml` (both use the official `dart-lang/setup-dart` reusable workflow, authenticating via OIDC — no long-lived tokens required). After the first manual publish, authorize each package on pub.dev once:
 
-### 日常发版（tag 驱动，全自动）
+1. Log in to pub.dev and open `https://pub.dev/packages/<package-name>/admin`
+2. Go to **Automated publishing** → **Enable publishing from GitHub Actions**
+3. Set **Repository** to `Vincen-dev/codec` (the same repo for both packages)
+4. Set the **Tag pattern** (`{{version}}` is a literal placeholder and must match the glob in the workflow's `on.push.tags`):
+   - `codec` package: `codec-v{{version}}`
+   - `codec_gen` package: `codec_gen-v{{version}}`
+5. (Optional, stricter) Check **Require GitHub Actions environment**, name it (e.g. `pub.dev`), then create a matching environment in GitHub repository Settings → Environments (you can add required reviewers there), and add `environment: pub.dev` under `with:` in the corresponding workflow
+6. Save
 
-改 `version` + `CHANGELOG.md`，提交推送后打 tag 触发（仍是 codec 先）：
+### Routine releases (tag-driven, fully automated)
+
+Bump `version` and `CHANGELOG.md`, commit and push, then create the tags to trigger CI — `codec` first:
 
 ```bash
-git tag codec-v0.2.0     && git push origin codec-v0.2.0       # 等 CI 发完 codec
-git tag codec_gen-v0.2.0 && git push origin codec_gen-v0.2.0   # 再发 codec_gen
+git tag codec-v0.2.0     && git push origin codec-v0.2.0       # wait for CI to publish codec
+git tag codec_gen-v0.2.0 && git push origin codec_gen-v0.2.0   # then publish codec_gen
 ```
 
-CI 在 GitHub 海外 runner 上跑 `dart pub publish`，不受本地网络 / 镜像影响。
+CI runs `dart pub publish` on GitHub's hosted runners, so it is unaffected by local network configuration or registry mirrors.
 
-> ⚠️ `0.1.6` 是手动首发的版本，**不要**再给它打 `codec-v0.1.6` tag——开启自动发布后
-> 推一个已存在版本的 tag，CI 会去重发而报错。tag 驱动从下一个版本开始。
+> Tag-driven publishing is only active once the packages exist on pub.dev (i.e. after the first manual publish described above). Pushing a tag for a version that does not yet exist on pub.dev will cause the workflow to attempt a publish that may conflict; always complete the manual first-publish step before relying on tag automation.
+
+---
 
 ## License
 

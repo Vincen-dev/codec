@@ -1,28 +1,53 @@
 # codec_gen
 
-> `codec` 包的 codegen builder。读 `@Codable` / `@CodecEnum` 注解，
-> 生成 `_$xxxCodec` 静态字段。配合运行时包
-> [`codec`](https://pub.dev/packages/codec) 使用。
+[![pub version](https://img.shields.io/pub/v/codec_gen.svg)](https://pub.dev/packages/codec_gen)
+[![pub points](https://img.shields.io/pub/points/codec_gen)](https://pub.dev/packages/codec_gen/score)
+[![likes](https://img.shields.io/pub/likes/codec_gen)](https://pub.dev/packages/codec_gen/score)
+[![license: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 
-## 安装
+**Annotation-driven build_runner code generator for the [`codec`](https://pub.dev/packages/codec) runtime package.**
+
+Annotate your model with `@Codable` or `@CodecEnum` and run `build_runner`; `codec_gen` emits
+a `_$xxxCodec` static field wired to a fully type-safe `Codec<T>` — no hand-written
+encode/decode boilerplate required.
+
+## Features
+
+- **Annotation-driven codegen** — `@Codable` on a class generates a complete `Codec<T>` with both `decode` and `encode` paths.
+- **Rich field control** — `@CodecField` covers renaming, default values, null inclusion, custom codecs, `DateTime` modes, and enum value mapping.
+- **Build-time validation** — schema errors (unrecognised field types, missing `@Codable` on nested models, partial enum coverage, mismatched `unknownEnumValue`) surface during `build_runner`, not at runtime.
+- **Configurable exception style** — set `exception_style: format` in `build.yaml` to make generated codecs throw `FormatException` instead of `DecodeException`, enabling zero-touch migration of existing error handlers.
+- **Plays well with others** — uses `SharedPartBuilder` so it coexists with `json_serializable`, `freezed`, and any other part-file generator in the same build.
+
+## Installation
 
 ```yaml
 dependencies:
-  codec: ^0.2.0
+  codec: ^0.2.1
 
 dev_dependencies:
   codec_gen: ^0.2.0
   build_runner: ^2.4.0
 ```
 
-或：
+Or via the command line:
 
 ```bash
 dart pub add codec
 dart pub add dev:codec_gen dev:build_runner
 ```
 
-model 文件：
+## Contents
+
+- [Annotate your model](#annotate-your-model)
+- [Field annotation quick reference](#field-annotation-quick-reference)
+- [Build options](#build-options-buildyaml)
+- [Codegen-time validation](#codegen-time-validation)
+- [Field rename rules](#field-rename-rules-fieldrename)
+
+---
+
+## Annotate your model
 
 ```dart
 import 'package:codec/codec.dart';
@@ -31,7 +56,7 @@ part 'order_model.g.dart';
 @Codable(includeIfNull: false)
 final class OrderModel {
   final int orderId;
-  
+
   @CodecField(name: 'total_amount', defaultValue: 0.0)
   final double totalAmount;
 
@@ -43,61 +68,63 @@ final class OrderModel {
 }
 ```
 
-跑生成：
+Run the generator:
 
 ```bash
 dart run build_runner build --delete-conflicting-outputs
 ```
 
-详细注解语义见 [`codec`](https://pub.dev/packages/codec) 包内 `annotations.dart`
-的 dartdoc。
+For full annotation semantics, see the dartdoc in `annotations.dart` inside the
+[`codec`](https://pub.dev/packages/codec) package.
 
-## 字段级注解速查
+---
+
+## Field annotation quick reference
 
 ```dart
-@Codable(includeIfNull: false)              // 类级：toJson 默认省略 null 字段
+@Codable(includeIfNull: false)              // class-level: omit null fields in toJson by default
 final class OrderModel {
-  // 简单字段：不挂注解，使用 dart 字段名作为 JSON key
+  // Plain field — no annotation; uses the Dart field name as the JSON key
   final String orderId;
 
-  // 重命名 + 默认值
+  // Rename + default value
   @CodecField(name: 'total_amount', defaultValue: 0.0)
   final double totalAmount;
 
-  // 字段级覆盖类级 includeIfNull：保留 null
+  // Field-level override of class-level includeIfNull: keep null
   @CodecField(includeIfNull: true)
   final String? note;
 
-  // 跳过此字段（两种等价写法）
+  // Skip this field (two equivalent forms)
   @CodecIgnore()
   final String? _localCache;
-  // 或：@CodecField(ignore: true)
+  // or: @CodecField(ignore: true)
 
-  // 自定义 codec
+  // Custom codec
   @CodecField(codec: '_amountCodec')
   final Decimal price;
 
-  // DateTime 模式（不写字符串引用）
+  // DateTime modes (no string reference needed)
   @CodecField(dateTime: DateTimeMode.utc)
-  final DateTime createdAt;            // 走 Codec.dateTimeUtc
+  final DateTime createdAt;            // uses Codec.dateTimeUtc
   @CodecField(dateTime: DateTimeMode.seconds)
-  final DateTime serverTime;           // 走 Codec.dateTimeSeconds
+  final DateTime serverTime;           // uses Codec.dateTimeSeconds
 
-  // 后端发毫秒时间戳 + 业务时区敏感场景：双向数字 ↔ UTC DateTime
+  // Millisecond timestamp + UTC DateTime (time-zone-aware)
   @CodecField(dateTime: DateTimeMode.millisUtc)
-  final DateTime txTime;               // decode 出 isUtc=true；encode 回毫秒数字
+  final DateTime txTime;               // decodes to isUtc=true; encodes back to ms integer
   @CodecField(dateTime: DateTimeMode.secondsUtc)
-  final DateTime expireAt;             // 同上但秒粒度
+  final DateTime expireAt;             // same but second granularity
 
-  // 枚举按字段值映射（枚举无需挂 @CodecEnum，保持 core/domain 纯净）
+  // Enum mapped by a named property value (enum needs no @CodecEnum, keeping core/domain clean)
   @CodecField(enumValueField: 'code')
-  final OrderState orderState;         // JSON {"orderState": 3} ↔ code 为 3 的值
+  final OrderState orderState;         // JSON {"orderState": 3} <-> instance whose code == 3
 
-  // 未知 code 向前兼容：未命中映射时兜底到指定枚举值（不抛 UnknownTag）
+  // Forward-compatible unknown code: fall back to a specific enum value instead of throwing
   @CodecField(enumValueField: 'code', unknownEnumValue: StoreArea.hk)
-  final StoreArea regionId;            // 未知 / 后端新增 code → hk
+  final StoreArea regionId;            // unrecognised / new backend code -> hk
 
-  // const List/Map 默认值
+  // const List/Map default values
   @CodecField(defaultValue: <String>[])
   final List<String> tags;
   @CodecField(defaultValue: <String, int>{})
@@ -105,11 +132,13 @@ final class OrderModel {
 }
 ```
 
-## 构建选项（build.yaml）
+---
+
+## Build options (`build.yaml`)
 
 ### `exception_style`
 
-控制生成的顶层 codec 的异常类型（默认 `codec`）：
+Controls the exception type thrown by the generated top-level codec (default: `codec`):
 
 ```yaml
 targets:
@@ -117,40 +146,42 @@ targets:
     builders:
       codec_gen:
         options:
-          exception_style: format   # 改为统一抛 FormatException；默认 codec=抛 CodecException
+          exception_style: format   # throw FormatException; default codec throws DecodeException
 ```
 
-| 值 | 行为 |
+| Value | Behaviour |
 |---|---|
-| `codec`（默认） | 生成的 `_$xxxCodec` 直接使用，`decode` / `encode` 抛 `DecodeException` / `EncodeException` |
-| `format` | 生成的 `_$xxxCodec` 自动追加 `.withFormatExceptions()`，`decode` / `encode` 统一抛 Dart 内置 `FormatException` |
+| `codec` (default) | The generated `_$xxxCodec` is used directly; `decode` / `encode` throw `DecodeException` / `EncodeException` |
+| `format` | The generated `_$xxxCodec` automatically has `.withFormatExceptions()` appended; `decode` / `encode` throw Dart's built-in `FormatException` |
 
-设置 `exception_style: format` 是为既有 `on FormatException` 代码提供零侵入的迁移路径，
-无需修改任何调用方。需要结构化处理时改用 `codec`（默认），通过
-`on DecodeException` / `on EncodeException` 访问 `errors` / `cause` 等字段。
+Use `exception_style: format` to provide a zero-touch migration path for existing code that
+catches `on FormatException` — no changes required at call sites. When structured error
+handling is needed, use the default `codec` mode and catch `on DecodeException` /
+`on EncodeException` to inspect the `errors`, `cause`, and `$.path` location fields.
 
-## codegen 期校验
+---
 
-下列错误会在跑 `build_runner` 时直接报出，**不会**等到运行时才暴露：
+## Codegen-time validation
 
-- `@Codable` 不挂在 class 上 / class 缺默认（unnamed）构造器；
-- 字段类型 codec_gen 不认识（提示用 `@CodecField(codec: 'xxx')` 兜底）；
-- 嵌套 model 类型未挂 `@Codable`（提示加 `@Codable()` 或字段级 codec）；
-- `Map` 的 key 不是 `String`；
-- `@CodecValue` 同一 enum 内 `String` / `int` 混用；
-- **`@CodecField(enumValueField:)` 用于非 enum 字段 / 枚举上找不到该字段 /
-  目标字段类型不在 `int` / `String` / `double` / `num`**；
-- **`@CodecField(unknownEnumValue:)` 脱离 `enumValueField` 单独设置 / 其枚举类型
-  与字段枚举不一致**：前者属误用，后者会生成编译不过的代码，均在此阶段报错；
-- **`@CodecEnum` 部分值漏挂 `@CodecValue`**：避免运行时 encode 漏值崩溃。
-  要么全挂，要么全不挂走默认 `.name` / `valueField`。
+The following errors are reported during `build_runner` and will never be deferred to runtime:
 
-## 字段名重命名（`fieldRename`）
+- `@Codable` not applied to a class, or the class has no unnamed constructor.
+- A field type is not recognised by `codec_gen` (hint: use `@CodecField(codec: 'xxx')` as an escape hatch).
+- A nested model type does not carry `@Codable` (hint: add `@Codable()` or supply a field-level codec).
+- A `Map` key type is not `String`.
+- Mixed `String` / `int` `@CodecValue` types within the same enum.
+- `@CodecField(enumValueField:)` applied to a non-enum field, or the enum has no such property, or the target property type is not `int` / `String` / `double` / `num`.
+- `@CodecField(unknownEnumValue:)` set without `enumValueField`, or its enum type does not match the field's enum type (the former is a misuse; the latter would generate non-compiling code).
+- `@CodecEnum` with only partial `@CodecValue` coverage: all values must be annotated or none (defaulting to `.name` / `valueField`), to prevent a runtime `EncodeException` on unannotated values.
 
-`@Codable(fieldRename: FieldRename.snake)` 切分规则与 Lodash / inflection
-一致：
+---
 
-| Dart 字段 | snake | kebab | pascal | screamingSnake |
+## Field rename rules (`fieldRename`)
+
+`@Codable(fieldRename: FieldRename.snake)` uses the same word-splitting rules as
+Lodash / inflection:
+
+| Dart field | snake | kebab | pascal | screamingSnake |
 |---|---|---|---|---|
 | `userName` | `user_name` | `user-name` | `UserName` | `USER_NAME` |
 | `userID` | `user_id` | `user-id` | `UserId` | `USER_ID` |
@@ -158,6 +189,12 @@ targets:
 | `userIDValue` | `user_id_value` | `user-id-value` | `UserIdValue` | `USER_ID_VALUE` |
 | `parseHTTPURLPath` | `parse_httpurl_path` | `parse-httpurl-path` | `ParseHttpurlPath` | `PARSE_HTTPURL_PATH` |
 
-> 纯字符串无法识别 `HTTPURL` 是 `HTTP+URL` 还是单词，连续大写无内嵌 lower
-> 时算作单词。后端字段名跟单词分隔的，建议在 dart 字段名上保留显式边界
-> （如写成 `parseHttpUrlPath`），或用 `@CodecField(name: '...')` 显式指定。
+> A purely consecutive-uppercase run with no embedded lowercase (e.g. `HTTPURL`) cannot be
+> split into `HTTP` + `URL` from the string alone and is treated as a single word. If the
+> backend uses word-separated field names, keep explicit word boundaries in the Dart field
+> name (e.g. `parseHttpUrlPath`) or use `@CodecField(name: '...')` to specify the JSON key
+> explicitly.
+
+---
+
+[MIT](LICENSE) © Vincen (Zhang Wenjin)
