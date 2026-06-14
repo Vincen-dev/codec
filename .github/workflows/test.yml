@@ -36,10 +36,15 @@ jobs:
         run: dart run build_runner build --delete-conflicting-outputs
         working-directory: packages/codec_example
 
-      # Drift guard: committed .g.dart must match a fresh regeneration.
-      # Runs from the repo root (no working-directory) so the pathspec resolves.
+      # Drift guard: committed .g.dart must match a fresh regeneration, and no
+      # generated file may be left untracked. Stage everything under the package,
+      # then assert the staged tree has no changes — this catches BOTH modified
+      # committed files AND newly generated-but-uncommitted ones (a plain
+      # `git diff` ignores untracked files). Runs from the repo root.
       - name: Drift guard (committed .g.dart must match regeneration)
-        run: git diff --exit-code -- packages/codec_example
+        run: |
+          git add -A packages/codec_example
+          git diff --cached --exit-code -- packages/codec_example
 
       - name: Test codec_example (roundtrip)
         run: dart test
