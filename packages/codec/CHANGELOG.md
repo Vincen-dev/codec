@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.3.0
+
+- **`Codable.fieldRename` is now nullable** (`FieldRename?`, default `null`).
+  `null` means "inherit the project-level default" (the `field_rename` build
+  option in `codec_gen`, falling back to `FieldRename.none`); an explicit value —
+  including `FieldRename.none` — overrides it. Behaviourally compatible: with no
+  global default configured, `null` resolves to `none` exactly as before.
+
 ## 0.2.1
 
 - Docs & metadata: English `description` and CHANGELOG; `repository` now points to the package subdirectory (pub.dev scoring). No code changes.

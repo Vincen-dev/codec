@@ -159,6 +159,33 @@ catches `on FormatException` — no changes required at call sites. When structu
 handling is needed, use the default `codec` mode and catch `on DecodeException` /
 `on EncodeException` to inspect the `errors`, `cause`, and `$.path` location fields.
 
+### `field_rename`
+
+Sets a project-wide default field-rename strategy, applied to every `@Codable`
+class that does not specify its own `fieldRename` (default: none):
+
+```yaml
+targets:
+  $default:
+    builders:
+      codec_gen:
+        options:
+          field_rename: snake   # default for all @Codable classes
+```
+
+Allowed values are the `FieldRename` enum names: `none`, `snake`, `kebab`,
+`pascal`, `camel`, `screamingSnake`. An unknown value fails the build with an
+`ArgumentError`.
+
+Precedence (highest first):
+
+| Source | Wins when |
+|---|---|
+| `@CodecField(name: 'x')` | a field sets an explicit JSON name |
+| `@Codable(fieldRename: X)` | the class explicitly sets a strategy (including `FieldRename.none` to opt back out of a global default) |
+| `field_rename` (build.yaml) | the class does not specify `fieldRename` |
+| `FieldRename.none` | nothing above applies |
+
 ---
 
 ## Codegen-time validation
@@ -178,8 +205,10 @@ The following errors are reported during `build_runner` and will never be deferr
 
 ## Field rename rules (`fieldRename`)
 
-`@Codable(fieldRename: FieldRename.snake)` uses the same word-splitting rules as
-Lodash / inflection:
+Set per class with `@Codable(fieldRename: FieldRename.snake)`, or project-wide
+with the `field_rename` build option above. `@Codable(fieldRename: ...)` overrides
+the project default; omit it to inherit. All strategies use the same
+word-splitting rules as Lodash / inflection:
 
 | Dart field | snake | kebab | pascal | screamingSnake |
 |---|---|---|---|---|

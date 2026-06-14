@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.3.0
+
+- **Global `field_rename` build option**: set `field_rename` in `build.yaml`
+  (`none` / `snake` / `kebab` / `pascal` / `camel` / `screamingSnake`) to apply a
+  project-wide default field-rename strategy. `@Codable(fieldRename: ...)` still
+  overrides per class; an explicit `FieldRename.none` opts a class back out of the
+  global default. Requires `codec` ≥ 0.3.0 (`Codable.fieldRename` is now nullable).
+
 ## 0.2.1
 
 - Maintenance release: version alignment with `codec` 0.2.1. No changes to the generated code or public API.
