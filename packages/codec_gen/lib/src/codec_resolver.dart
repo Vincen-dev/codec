@@ -49,7 +49,10 @@ class CodecResolver {
       // 已经是可空形态（Codec.any 的 Object?），不重复加。
       final wrappedTypeArg =
           core.typeArg.endsWith('?') ? core.typeArg : '${core.typeArg}?';
-      return (expr: '${core.expr}${RuntimeApi.nullableCall}', typeArg: wrappedTypeArg);
+      return (
+        expr: '${core.expr}${RuntimeApi.nullableCall}',
+        typeArg: wrappedTypeArg,
+      );
     }
     return core;
   }
