@@ -34,7 +34,7 @@ final class Codable {
   /// const 构造（注解必须 const）。
   const Codable({
     this.includeIfNull = true,
-    this.fieldRename = FieldRename.none,
+    this.fieldRename,
   });
 
   /// 类级默认：toJson 是否输出 null 字段。`false` 时生成代码尾部追加
@@ -42,8 +42,11 @@ final class Codable {
   final bool includeIfNull;
 
   /// 字段名转换策略：dart 字段 → JSON 字段。
-  /// 字段级 [CodecField.name] 显式覆盖此策略。
-  final FieldRename fieldRename;
+  ///
+  /// `null`（默认）：继承项目级默认——build.yaml 的 `field_rename`，未配置则
+  /// [FieldRename.none]。显式给值（含 [FieldRename.none]）覆盖项目级默认。
+  /// 字段级 [CodecField.name] 始终优先于本策略。
+  final FieldRename? fieldRename;
 }
 
 /// 字段名重命名策略。

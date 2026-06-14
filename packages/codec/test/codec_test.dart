@@ -765,7 +765,7 @@ void main() {
     test('@Codable 默认参数', () {
       const a = Codable();
       expect(a.includeIfNull, true);
-      expect(a.fieldRename, FieldRename.none);
+      expect(a.fieldRename, isNull);
     });
 
     test('@Codable 自定义参数', () {
