@@ -4,6 +4,7 @@ library;
 
 import 'package:build/build.dart';
 import 'package:dart_style/dart_style.dart';
+import 'package:codec/codec.dart';
 import 'package:source_gen/source_gen.dart';
 
 import 'src/codable_generator.dart';
@@ -29,9 +30,25 @@ Builder codecBuilder(BuilderOptions options) {
     _ => throw ArgumentError(
         'codec_gen: unknown exception_style "$raw" (allowed: codec, format)'),
   };
+  final renameRaw = options.config['field_rename'];
+  final FieldRename? globalRename = switch (renameRaw) {
+    null => null,
+    'none' => FieldRename.none,
+    'snake' => FieldRename.snake,
+    'kebab' => FieldRename.kebab,
+    'pascal' => FieldRename.pascal,
+    'camel' => FieldRename.camel,
+    'screamingSnake' => FieldRename.screamingSnake,
+    _ => throw ArgumentError(
+        'codec_gen: unknown field_rename "$renameRaw" '
+        '(allowed: none, snake, kebab, pascal, camel, screamingSnake)'),
+  };
   return SharedPartBuilder(
     [
-      CodableGenerator(formatExceptions: format),
+      CodableGenerator(
+        formatExceptions: format,
+        defaultFieldRename: globalRename ?? FieldRename.none,
+      ),
       CodecEnumGenerator(formatExceptions: format),
     ],
     'codec_gen',
