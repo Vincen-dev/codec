@@ -10,3 +10,4 @@ environment:
 workspace:
   - packages/codec
   - packages/codec_gen
+  - packages/codec_example

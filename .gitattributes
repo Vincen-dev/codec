@@ -1,0 +1,4 @@
+# 生成的 Dart 代码由 dart_style 以 LF 输出；固定 EOL，避免 Windows 上 git
+# 把检入的 .g.dart 转成 CRLF，从而让 CI 的「重生成后 git diff --exit-code」漂移
+# 守卫误报。
+*.g.dart text eol=lf

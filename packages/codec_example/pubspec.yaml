@@ -1,0 +1,17 @@
+name: codec_example
+description: Runnable example and end-to-end fixture for codec + codec_gen (not published).
+publish_to: none
+
+environment:
+  sdk: ^3.6.0
+
+resolution: workspace
+
+dependencies:
+  codec: ^0.2.0
+
+dev_dependencies:
+  codec_gen: ^0.2.0
+  build_runner: ^2.4.0
+  test: ^1.25.0
+  lints: ^6.1.0
