@@ -3,6 +3,8 @@ import 'package:analyzer/dart/element/nullability_suffix.dart';
 import 'package:analyzer/dart/element/type.dart';
 import 'package:source_gen/source_gen.dart';
 
+import 'runtime_api.dart';
+
 /// codec 表达式 + 该 codec 的 [T] 类型字符串。
 ///
 /// generator 拼装读取调用时需要显式 `b.required<T>` / `b.optional<T>` 等
@@ -47,7 +49,7 @@ class CodecResolver {
       // 已经是可空形态（Codec.any 的 Object?），不重复加。
       final wrappedTypeArg =
           core.typeArg.endsWith('?') ? core.typeArg : '${core.typeArg}?';
-      return (expr: '${core.expr}.nullable()', typeArg: wrappedTypeArg);
+      return (expr: '${core.expr}${RuntimeApi.nullableCall}', typeArg: wrappedTypeArg);
     }
     return core;
   }
@@ -55,29 +57,29 @@ class CodecResolver {
   CodecResolution _resolveCore(DartType type, FieldElement field) {
     // 原语
     if (type.isDartCoreString) {
-      return (expr: 'Codec.string', typeArg: 'String');
+      return (expr: RuntimeApi.string, typeArg: 'String');
     }
     if (type.isDartCoreInt) {
-      return (expr: 'Codec.integer', typeArg: 'int');
+      return (expr: RuntimeApi.integer, typeArg: 'int');
     }
     if (type.isDartCoreDouble) {
-      return (expr: 'Codec.number', typeArg: 'double');
+      return (expr: RuntimeApi.number, typeArg: 'double');
     }
     if (type.isDartCoreNum) {
-      return (expr: 'Codec.numeric', typeArg: 'num');
+      return (expr: RuntimeApi.numeric, typeArg: 'num');
     }
     if (type.isDartCoreBool) {
-      return (expr: 'Codec.boolean', typeArg: 'bool');
+      return (expr: RuntimeApi.boolean, typeArg: 'bool');
     }
 
     final displayName = type.getDisplayString().replaceAll('?', '');
     if (displayName == 'DateTime') {
-      return (expr: 'Codec.dateTime', typeArg: 'DateTime');
+      return (expr: RuntimeApi.dateTime, typeArg: 'DateTime');
     }
     if (displayName == 'Object' || displayName == 'dynamic') {
       // Codec.any 是 Codec<Object?>——内置 codec 里唯一 T 自身可空的，
       // typeArg 必须是 Object? 才能与 codec 类型严格匹配。
-      return (expr: 'Codec.any', typeArg: 'Object?');
+      return (expr: RuntimeApi.any, typeArg: 'Object?');
     }
 
     // List<T>：嵌套类型走 resolve(wrapNullable: true) 保持元素可空信息
@@ -85,7 +87,7 @@ class CodecResolver {
       final inner = type.typeArguments.first;
       final innerR = resolve(inner, field, wrapNullable: true);
       return (
-        expr: '${innerR.expr}.list()',
+        expr: '${innerR.expr}${RuntimeApi.listCall}',
         typeArg: 'List<${innerR.typeArg}>',
       );
     }
@@ -101,7 +103,7 @@ class CodecResolver {
       }
       final innerR = resolve(args[1], field, wrapNullable: true);
       return (
-        expr: 'Codec.mapOf(${innerR.expr})',
+        expr: '${RuntimeApi.mapOf}(${innerR.expr})',
         typeArg: 'Map<String, ${innerR.typeArg}>',
       );
     }
@@ -120,7 +122,7 @@ class CodecResolver {
           .join(', ');
       // 注：单行表达式形式，注释由调用方决定要不要追加
       return (
-        expr: 'Codec.enumByName(const {$entries})',
+        expr: '${RuntimeApi.enumByName}(const {$entries})',
         typeArg: element.name!,
       );
     }
@@ -130,7 +132,7 @@ class CodecResolver {
       // 自引用 → lazy 打破构造循环
       if (element == selfClass) {
         return (
-          expr: 'Codec.lazy(() => ${element.name!}.codec)',
+          expr: '${RuntimeApi.lazy}(() => ${element.name!}.codec)',
           typeArg: element.name!,
         );
       }

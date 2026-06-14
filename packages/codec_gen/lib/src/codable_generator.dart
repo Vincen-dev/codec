@@ -6,6 +6,7 @@ import 'package:source_gen/source_gen.dart';
 
 import 'codec_resolver.dart';
 import 'naming.dart';
+import 'runtime_api.dart';
 
 /// 处理 `@Codable` 类。生成顶层 `_$xxxCodec` final 字段。
 class CodableGenerator extends GeneratorForAnnotation<Codable> {
@@ -318,11 +319,11 @@ class CodableGenerator extends GeneratorForAnnotation<Codable> {
   }
 
   String _dateTimeCodecFor(DateTimeMode mode) => switch (mode) {
-        DateTimeMode.local => 'Codec.dateTime',
-        DateTimeMode.utc => 'Codec.dateTimeUtc',
-        DateTimeMode.seconds => 'Codec.dateTimeSeconds',
-        DateTimeMode.millisUtc => 'Codec.dateTimeMillisUtc',
-        DateTimeMode.secondsUtc => 'Codec.dateTimeSecondsUtc',
+        DateTimeMode.local => RuntimeApi.dateTime,
+        DateTimeMode.utc => RuntimeApi.dateTimeUtc,
+        DateTimeMode.seconds => RuntimeApi.dateTimeSeconds,
+        DateTimeMode.millisUtc => RuntimeApi.dateTimeMillisUtc,
+        DateTimeMode.secondsUtc => RuntimeApi.dateTimeSecondsUtc,
       };
 
   /// 为 `@CodecField(enumValueField:)` 字段生成顶层 helper codec。
