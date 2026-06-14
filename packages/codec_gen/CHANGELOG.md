@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.2.1
+
+- Maintenance release: version alignment with `codec` 0.2.1. No changes to the generated code or public API.
+
 ## 0.2.0
 
 ### Dependency Upgrades
