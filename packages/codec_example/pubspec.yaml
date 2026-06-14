@@ -8,10 +8,10 @@ environment:
 resolution: workspace
 
 dependencies:
-  codec: ^0.2.0
+  codec: ^0.3.0
 
 dev_dependencies:
-  codec_gen: ^0.2.0
+  codec_gen: ^0.3.0
   build_runner: ^2.4.0
   test: ^1.25.0
   lints: ^6.1.0

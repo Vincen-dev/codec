@@ -1,6 +1,6 @@
 name: codec_gen
 description: "Code generator for the codec package: reads @Codable / @CodecEnum annotations and generates type-safe JSON codec fields with $.path error locations, via build_runner."
-version: 0.2.1
+version: 0.3.0
 repository: https://github.com/Vincen-dev/codec/tree/main/packages/codec_gen
 issue_tracker: https://github.com/Vincen-dev/codec/issues
 
@@ -21,7 +21,7 @@ dependencies:
   build: ^4.0.6
   source_gen: ^4.2.3
   dart_style: ^3.0.0
-  codec: ^0.2.0
+  codec: ^0.3.0
 
 dev_dependencies:
   build_runner: ^2.4.0

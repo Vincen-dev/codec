@@ -1,6 +1,6 @@
 name: codec
 description: "Type-safe, composable JSON codecs for Dart: structured CodecException with $.path on failure. Nested objects, discriminated unions, recursion, multi-version compatibility."
-version: 0.2.1
+version: 0.3.0
 repository: https://github.com/Vincen-dev/codec/tree/main/packages/codec
 issue_tracker: https://github.com/Vincen-dev/codec/issues
 
