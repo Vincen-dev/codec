@@ -630,7 +630,7 @@ final class M {
   const M({required this.userName});
 }
 ''', CodableGenerator(defaultFieldRename: FieldRename.snake));
-      expect(out, contains("'user-name'"));
+      expect(out, contains("b.required<String>('user-name', Codec.string)"));
       expect(out, isNot(contains("'user_name'")));
     });
 
@@ -643,7 +643,7 @@ final class M {
   const M({required this.userName});
 }
 ''', CodableGenerator(defaultFieldRename: FieldRename.snake));
-      expect(out, contains("'userName'"));
+      expect(out, contains("b.required<String>('userName', Codec.string)"));
       expect(out, isNot(contains("'user_name'")));
     });
 
@@ -671,6 +671,7 @@ final class M {
 }
 ''');
       expect(out, contains("'userName'"));
+      expect(out, contains("'userName': Codec.string.encode(v.userName)"));
     });
   });
 }
