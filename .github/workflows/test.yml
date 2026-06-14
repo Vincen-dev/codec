@@ -1,0 +1,46 @@
+name: test
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dart-lang/setup-dart@v1
+
+      - name: Resolve workspace
+        run: dart pub get
+
+      - name: Analyze codec
+        run: dart analyze
+        working-directory: packages/codec
+      - name: Analyze codec_gen
+        run: dart analyze
+        working-directory: packages/codec_gen
+      - name: Analyze codec_example
+        run: dart analyze
+        working-directory: packages/codec_example
+
+      - name: Test codec
+        run: dart test
+        working-directory: packages/codec
+      - name: Test codec_gen
+        run: dart test
+        working-directory: packages/codec_gen
+
+      - name: Regenerate codec_example
+        run: dart run build_runner build --delete-conflicting-outputs
+        working-directory: packages/codec_example
+
+      # Drift guard: committed .g.dart must match a fresh regeneration.
+      # Runs from the repo root (no working-directory) so the pathspec resolves.
+      - name: Drift guard (committed .g.dart must match regeneration)
+        run: git diff --exit-code -- packages/codec_example
+
+      - name: Test codec_example (roundtrip)
+        run: dart test
+        working-directory: packages/codec_example
